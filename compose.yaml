@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    init: true
+    restart: unless-stopped
+    shm_size: 1gb
+    security_opt:
+      - seccomp=./scripts/seccomp_profile.json
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      API_TOKEN: ${API_TOKEN:?Set a random API_TOKEN in .env}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set your exact GitHub Pages origin}
+      PHOTON_URL: ${PHOTON_URL:-https://photon.komoot.io}
+      OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      OSRM_URL: ${OSRM_URL:-https://router.project-osrm.org}

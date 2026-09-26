@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174e3e"><meta name="description" content="Turn a shopping list into a real driving route, with transparent retailer evidence and an honest cost breakdown.">
+  <title>AislePilot — Your errands, in a better order</title>
+  <script defer src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="./config.js" defer></script><script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a href="#planner" class="skip">Skip to planner</a>
+  <header class="header"><div class="header-inner">
+    <a class="brand" href="./" aria-label="AislePilot home"><span class="brand-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 18 10 5h4l5 13M7.5 12h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m9 18 3-3 3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>AislePilot<span class="version">02</span></a>
+    <nav aria-label="Main navigation"><a href="#planner" class="nav-active">Trip planner</a><button id="about-button" type="button">How it works</button></nav>
+    <button class="connection" id="connection-button" type="button"><span class="status-dot"></span><span id="connection-label">Map mode</span><span aria-hidden="true">↗</span></button>
+  </div></header>
+  <main id="planner" class="shell">
+    <section class="intro"><div><h1>Plan your shopping trip.</h1><p>Add your list and starting address to compare real store routes.</p></div></section>
+    <div class="workspace">
+      <aside class="input-panel">
+        <div class="panel-title"><span class="section-number">01</span><h2>Build your trip</h2><span class="subtle">Start here</span></div>
+        <form id="trip-form">
+          <label class="field-label" for="address">Where are you starting?</label>
+          <div class="address-wrap"><span aria-hidden="true">⌖</span><input id="address" name="address" autocomplete="street-address" placeholder="Street address, city, state" maxlength="300" required></div>
+          <p class="hint">Or enter latitude, longitude. You’ll confirm the map pin.</p>
+          <div class="field-heading"><label class="field-label" for="shopping-list">What’s on your list?</label><button class="text-button" id="example-button" type="button">Try a list ↗</button></div>
+          <textarea id="shopping-list" name="list" maxlength="12000" rows="10" placeholder="2 milk&#10;eggs&#10;bread&#10;bananas&#10;coffee&#10;1 basketball&#10;flower pot&#10;Dune paperback" required></textarea>
+          <div class="list-footer"><span>New lines, commas & checklists welcome</span><span id="list-count">0 items</span></div>
+          <div class="two-fields"><div><label class="field-label" for="radius">Search radius</label><select id="radius"><option value="5">5 km · 3 mi</option><option value="8" selected>8 km · 5 mi</option><option value="15">15 km · 9 mi</option><option value="20">20 km · 12 mi</option></select></div><div><label class="field-label" for="round-trip">Finish your trip</label><select id="round-trip"><option value="no">At the last store</option><option value="yes">Back at the start</option></select></div></div>
+          <label class="checkline"><input id="use-quotes" type="checkbox" checked><span>Use matching online prices as estimates<small>Candidate products and package sizes need review.</small></span></label>
+          <button id="optimize" class="primary w-full" type="submit"><span>Optimize My Route</span><span aria-hidden="true">↗</span></button>
+          <button id="cancel" class="secondary w-full" type="button" hidden>Cancel current request</button>
+          <p class="data-note">Your address is sent to the geocoder. Coordinates go to map and routing services; item names go to selected retailers when a backend is connected.</p>
+        </form>
+        <div class="mini-guide"><span aria-hidden="true">✳</span><div><strong>For a more specific match</strong><p>Add quantities and sizes, or paste an official product link after an item for a more specific lookup.</p></div></div>
+        <details class="settings-details"><summary>Tax assumptions & preferences</summary><p class="hint">Enter your own effective rates. Blank means unknown; 0 means tax-free. No jurisdiction is inferred.</p><div class="two-fields"><div><label for="tax-grocery">Groceries (%)</label><input type="number" id="tax-grocery" min="0" max="30" step="0.01" placeholder="Unknown"></div><div><label for="tax-other">Other items (%)</label><input type="number" id="tax-other" min="0" max="30" step="0.01" placeholder="Unknown"></div></div><p class="hint">Estimates are in USD. Fuel, deposits, delivery, memberships and coupons are excluded.</p></details>
+      </aside>
+      <section class="results-panel" aria-label="Trip results">
+        <div class="results-heading"><div><span class="eyebrow">YOUR TRIP, AT A GLANCE</span><h2>Your route and budget</h2></div><button id="export" type="button" class="icon-button" disabled title="Download your trip as JSON" aria-label="Download trip report"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+        <div id="status" class="status-box" role="status" aria-live="polite"><span class="status-dot"></span><span>Add your address and shopping list to get started.</span></div>
+        <div class="map-card"><div id="map" aria-label="Interactive OpenStreetMap map"></div><div class="map-label"><span class="status-dot"></span> OPENSTREETMAP <span class="map-label-separator">/</span> OSRM ROUTING</div><div id="map-prompt" class="map-prompt"><div class="compass" aria-hidden="true">↗</div><strong>Your next trip starts here.</strong><span>Confirm a starting point to explore nearby stores.</span></div><div id="map-stats" class="map-stats" hidden></div></div>
+        <div id="origin-choices" class="choice-panel" hidden></div>
+        <div id="review-panel" class="choice-panel" hidden></div>
+        <div class="financial-grid">
+          <div class="money-card featured"><div class="metric-label" id="total-label">ESTIMATED KNOWN AMOUNT</div><div class="amount" id="total">—</div><div class="metric-caption" id="coverage">Prices appear with their evidence.</div></div>
+          <div class="money-card"><div class="metric-label">ITEM SUBTOTAL</div><div class="small-amount" id="subtotal">—</div><div class="metric-caption" id="subtotal-note">No prices assumed</div></div>
+          <div class="money-card"><div class="metric-label">TAX ESTIMATE</div><div class="small-amount" id="tax">—</div><div class="metric-caption" id="tax-note">Set your effective rates</div></div>
+        </div>
+        <div id="cost-categories" class="category-summary" hidden></div>
+        <div class="route-heading"><h2><span class="section-number">02</span> Your store sequence</h2><span id="stop-count" class="subtle">Ready when you are</span></div>
+        <div id="route-list"><div class="empty-route"><div class="empty-symbol" aria-hidden="true">⌁</div><div><strong>Your stops will appear here.</strong><p>We’ll compare nearby stores, connect the stops by road, and show what we can actually verify.</p></div></div></div>
+        <p id="route-method" class="method-note">Optimizes driving time across a shortlist of nearby stores. Store categories suggest availability; they don’t prove inventory. Road estimates exclude live traffic and time spent shopping.</p>
+      </section>
+    </div>
+    <footer><span class="brand-small">AislePilot <span> / </span> Know your next stop.</span><span>Maps © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> · Geocoding by Photon · Routes by OSRM</span></footer>
+  </main>
+  <dialog id="connection-dialog"><form method="dialog" class="dialog-top"><h2>Connect your backend</h2><button class="icon-button" aria-label="Close connection settings">×</button></form><p>GitHub Pages hosts this dashboard. Your Playwright backend checks retailer pages and can also relay map requests.</p><label class="field-label" for="api-base">Backend URL</label><input id="api-base" type="url" placeholder="https://your-backend.example.com" autocomplete="off"><p class="hint">Leave blank for maps and routes only. Local development accepts http://localhost:8787.</p><label class="field-label" for="api-token">Access token</label><input id="api-token" type="password" placeholder="Your private backend token" autocomplete="off"><p class="hint">The token stays in this tab’s memory. Never put it in your public repository.</p><div class="dialog-actions"><button class="secondary" id="test-connection" type="button">Test connection</button><button class="primary" id="save-connection" type="button">Save connection</button></div><p id="connection-status" role="status"></p></dialog>
+  <dialog id="about-dialog"><form method="dialog" class="dialog-top"><h2>A clear view of your trip</h2><button class="icon-button" aria-label="Close explanation">×</button></form><ol class="how-list"><li><strong>Find real places.</strong><p>Confirm a geocoded address. OpenStreetMap supplies nearby stores, coordinates and any available street addresses.</p></li><li><strong>Compare the drive.</strong><p>OSRM supplies road travel times. The planner finds the shortest sequence that covers your categories within a shortlist of up to three nearby stores per category.</p></li><li><strong>Check the evidence.</strong><p>A connected Chromium browser looks for public product offers. It respects robots.txt and access blocks. Online availability is different from stock at your selected branch.</p></li><li><strong>Build an honest budget.</strong><p>Matching online offers can supply candidate estimates. Unknowns stay unknown; add your own unit budgets. Specific quantities such as pounds and dozens need a budget in that unit.</p></li></ol><p class="hint">Public data services are best-effort and maps can be incomplete. Opening hours are shown as source data; the route does not filter for stores currently open.</p></dialog>
+  <noscript><p class="status-box">AislePilot needs JavaScript to parse your list and calculate routes.</p></noscript>
+</body>
+</html>

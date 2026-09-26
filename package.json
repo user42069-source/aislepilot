@@ -1,0 +1,17 @@
+{
+  "name": "aislepilot-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Real shopping routes, transparent price evidence, GitHub Pages frontend and Playwright backend",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "plan": "node --env-file-if-exists=.env scripts/plan.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "browser:install": "playwright install --with-deps chromium",
+    "dev": "vite --config vite.config.mjs"
+  },
+  "dependencies": { "playwright": "1.63.0", "robots-parser": "3.0.1" },
+  "devDependencies": { "vite": "8.0.13" }
+}
