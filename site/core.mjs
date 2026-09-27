@@ -151,3 +151,16 @@ export function calculateCost(items, quotes={}, manual={}, taxRates={}, useCandi
 export function navigationURL(from,to) {
   return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(`${from.lat},${from.lon}`)}&destination=${encodeURIComponent(`${to.lat},${to.lon}`)}&travelmode=driving`;
 }
+export function fullRouteURL(origin,stops,returnHome=false) {
+  if(!validPoint(origin)||!stops?.length)return null;
+  const destination=returnHome?origin:stops.at(-1);
+  const waypoints=returnHome?stops:stops.slice(0,-1);
+  const params=new URLSearchParams({
+    api:'1',
+    origin:`${origin.lat},${origin.lon}`,
+    destination:`${destination.lat},${destination.lon}`,
+    travelmode:'driving'
+  });
+  if(waypoints.length)params.set('waypoints',waypoints.map(p=>`${p.lat},${p.lon}`).join('|'));
+  return `https://www.google.com/maps/dir/?${params}`;
+}

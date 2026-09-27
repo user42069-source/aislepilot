@@ -4,6 +4,13 @@ import {createProviders,createAPI,DEFAULT_PROVIDERS} from './providers.mjs';
 const $=id=>document.getElementById(id);
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeLink=url=>{try{const u=new URL(url);return u.protocol==='https:'?escapeHTML(u.href):'#';}catch{return '#';}};
+function fullRouteURL(origin,stops,returnHome=false){
+  if(!origin||!stops?.length)return null;
+  const destination=returnHome?origin:stops.at(-1),waypoints=returnHome?stops:stops.slice(0,-1);
+  const params=new URLSearchParams({api:'1',origin:`${origin.lat},${origin.lon}`,destination:`${destination.lat},${destination.lon}`,travelmode:'driving'});
+  if(waypoints.length)params.set('waypoints',waypoints.map(p=>`${p.lat},${p.lon}`).join('|'));
+  return `https://www.google.com/maps/dir/?${params}`;
+}
 const distance=m=>`${(m/1609.344).toFixed(1)} mi`;
 const minutes=s=>`${Math.max(1,Math.round(s/60))} min`;
 let savedBase=null;try{savedBase=localStorage.getItem('aislepilot-api-base');}catch{}
@@ -70,7 +77,8 @@ function renderRoute(){
   if(!state.plan)return;
   const {stops,road,unassigned,returnHome}=state.plan;
   $('stop-count').textContent=`${stops.length} stop${stops.length===1?'':'s'} · ${state.items.length-unassigned.length}/${state.items.length} entries assigned`;
-  let html=`<div class="retry-row"><button id="review-categories" class="text-button" type="button">Review categories ↗</button>${apiBase?' <button id="retry-quotes" class="text-button" type="button" style="margin-left:18px">Retry price checks ↻</button>':''}</div>`;
+  let html=stops.length?`<a class="primary" style="width:fit-content;margin:0 0 14px auto;text-decoration:none" href="${safeLink(fullRouteURL(state.origin,stops,returnHome))}" target="_blank" rel="noopener noreferrer">Open full ${returnHome?'round-trip ':''}route in Google Maps ↗</a>`:'';
+  html+=`<div class="retry-row"><button id="review-categories" class="text-button" type="button">Review categories ↗</button>${apiBase?' <button id="retry-quotes" class="text-button" type="button" style="margin-left:18px">Retry price checks ↻</button>':''}</div>`;
   if(unassigned.length)html+=`<div class="unassigned"><strong>${unassigned.length} item${unassigned.length===1?' needs':'s need'} a store</strong>${unassigned.map(i=>escapeHTML(i.name)).join(', ')}<br>Choose a category or increase the search radius. These items are excluded from the driving route.</div>`;
   stops.forEach((store,index)=>{
     const from=index?stops[index-1]:state.origin,leg=road?.route?.legs[index];
